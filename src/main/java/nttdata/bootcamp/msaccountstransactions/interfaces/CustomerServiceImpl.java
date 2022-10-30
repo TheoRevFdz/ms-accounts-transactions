@@ -6,8 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
+import nttdata.bootcamp.msaccountstransactions.config.RestConfig;
 import nttdata.bootcamp.msaccountstransactions.dto.CustomerDTO;
 import nttdata.bootcamp.msaccountstransactions.dto.ProfileDTO;
 
@@ -15,7 +14,7 @@ import nttdata.bootcamp.msaccountstransactions.dto.ProfileDTO;
 public class CustomerServiceImpl implements ICustomerService {
 
     @Autowired
-    private RestTemplate rest;
+    private RestConfig rest;
 
     @Override
     public Optional<ProfileDTO> findProfileByProfile(String profile) {
