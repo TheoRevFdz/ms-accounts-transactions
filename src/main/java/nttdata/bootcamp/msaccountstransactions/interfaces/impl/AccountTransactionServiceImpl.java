@@ -1,4 +1,4 @@
-package nttdata.bootcamp.msaccountstransactions.interfaces;
+package nttdata.bootcamp.msaccountstransactions.interfaces.impl;
 
 import java.util.List;
 
@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import nttdata.bootcamp.msaccountstransactions.infraestructure.IAccountTransactionRepository;
+import nttdata.bootcamp.msaccountstransactions.interfaces.IAccountTransactionService;
 import nttdata.bootcamp.msaccountstransactions.model.AccountTransaction;
 
 @Service
