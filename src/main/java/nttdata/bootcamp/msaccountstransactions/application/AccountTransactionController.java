@@ -35,12 +35,14 @@ public class AccountTransactionController {
     private ICustomerService customerService;
 
     @CircuitBreaker(name = "accounts-transactions", fallbackMethod = "findByNroAccountAndTypeAlt")
-    @GetMapping("/{nroAccount}/{type}")
+
+    @GetMapping("/{nroAccount}/{type}")    
     public ResponseEntity<?> findByNroAccountAndType(@PathVariable String nroAccount, @PathVariable String type) {
         final List<AccountTransaction> response = service.findTransactionByNroAccountAndType(nroAccount, type);
         return ResponseEntity.ok(response);
     }
 
+    
     public ResponseEntity<?> findByNroAccountAndType(@PathVariable String nroAccount, @PathVariable String type,
             Exception ex) {
         log.info(ex.getMessage());
@@ -116,8 +118,8 @@ public class AccountTransactionController {
                         }
 
                         account.setAmount(account.getAmount() - at.getTransactionAmount());
-
                         ResponseEntity<?> resp = accountService.updateAccount(account);
+
                         if (resp.getStatusCodeValue() == HttpStatus.OK.value()) {
                             at.setType(TypeAccountTransaction.RETIRO.toString());
                             at.setTransactionDate(new Date());
@@ -140,4 +142,6 @@ public class AccountTransactionController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+    
+
 }

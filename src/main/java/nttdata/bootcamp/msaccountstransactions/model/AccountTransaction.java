@@ -22,4 +22,6 @@ public class AccountTransaction {
     private Double transactionAmount;
     private Date transactionDate;
     private Double comission;
+    private Double before;
+    private Double transactionLater;
 }
