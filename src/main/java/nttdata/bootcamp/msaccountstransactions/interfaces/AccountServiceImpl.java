@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,14 @@ public class AccountServiceImpl implements IAccountService {
     @Autowired
     private RestConfig rest;
 
+    @Value("${hostname}")
+    private String hostname;
+
     @Override
     public Optional<AccountDTO> findByNroAccount(String nroAccount) {
         Map<String, String> param = new HashMap<String, String>();
         param.put("nroAccount", nroAccount);
-        String uri = "http://localhost:8090/api/accounts/{nroAccount}";
+        String uri = String.format("http://%s:8090/api/accounts/{nroAccount}", hostname);
         AccountDTO dto = rest.getForObject(uri, AccountDTO.class, param);
         return Optional.ofNullable(dto);
     }
@@ -30,7 +34,7 @@ public class AccountServiceImpl implements IAccountService {
     @Override
     public ResponseEntity<?> updateAccount(AccountDTO dto) {
         HttpEntity<AccountDTO> body = new HttpEntity<AccountDTO>(dto);
-        String uri = "http://localhost:8090/api/accounts";
+        String uri = String.format("http://%s:8090/api/accounts", hostname);
         ResponseEntity<AccountDTO> response = rest.exchange(
                 uri,
                 HttpMethod.PUT,
