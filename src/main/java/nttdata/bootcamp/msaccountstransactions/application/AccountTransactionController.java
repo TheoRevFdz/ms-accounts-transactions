@@ -18,10 +18,13 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import nttdata.bootcamp.msaccountstransactions.dto.AccountDTO;
 import nttdata.bootcamp.msaccountstransactions.dto.CustomerDTO;
+import nttdata.bootcamp.msaccountstransactions.dto.DebitCardDTO;
+import nttdata.bootcamp.msaccountstransactions.enums.MethodTransaction;
 import nttdata.bootcamp.msaccountstransactions.enums.TypeAccountTransaction;
 import nttdata.bootcamp.msaccountstransactions.interfaces.IAccountService;
 import nttdata.bootcamp.msaccountstransactions.interfaces.IAccountTransactionService;
 import nttdata.bootcamp.msaccountstransactions.interfaces.ICustomerService;
+import nttdata.bootcamp.msaccountstransactions.interfaces.IDebitCardService;
 import nttdata.bootcamp.msaccountstransactions.model.AccountTransaction;
 
 @Slf4j
@@ -33,16 +36,16 @@ public class AccountTransactionController {
     private IAccountService accountService;
     @Autowired
     private ICustomerService customerService;
+    @Autowired
+    private IDebitCardService debitCardService;
 
     @CircuitBreaker(name = "accounts-transactions", fallbackMethod = "findByNroAccountAndTypeAlt")
-
-    @GetMapping("/{nroAccount}/{type}")    
+    @GetMapping("/{nroAccount}/{type}")
     public ResponseEntity<?> findByNroAccountAndType(@PathVariable String nroAccount, @PathVariable String type) {
         final List<AccountTransaction> response = service.findTransactionByNroAccountAndType(nroAccount, type);
         return ResponseEntity.ok(response);
     }
 
-    
     public ResponseEntity<?> findByNroAccountAndType(@PathVariable String nroAccount, @PathVariable String type,
             Exception ex) {
         log.info(ex.getMessage());
@@ -58,7 +61,16 @@ public class AccountTransactionController {
     @PostMapping("/deposit")
     public ResponseEntity<?> createdeposit(@RequestBody AccountTransaction at) {
         try {
-            Optional<AccountDTO> optAccount = accountService.findByNroAccount(at.getNroAccount());
+            String nroAccount = at.getNroAccount();
+
+            if (at.getMethod() == null || at.getMethod().isBlank())
+                at.setMethod(MethodTransaction.DIRECTO.toString());
+            var validDebitCard = validateDebitCardMethod(at);
+            if (validDebitCard.getStatusCodeValue() != HttpStatus.OK.value()) {
+                return validDebitCard;
+            }
+
+            Optional<AccountDTO> optAccount = accountService.findByNroAccount(nroAccount);
             if (optAccount.isPresent()) {
                 AccountDTO account = optAccount.get();
                 Optional<CustomerDTO> optCustomer = customerService.findCustomerByNroDoc(account.getNroDoc());
@@ -102,6 +114,13 @@ public class AccountTransactionController {
     @PostMapping("/retirement")
     public ResponseEntity<?> createRetirement(@RequestBody AccountTransaction at) {
         try {
+            if (at.getMethod() == null || at.getMethod().isBlank())
+                at.setMethod(MethodTransaction.DIRECTO.toString());
+            var validDebitCard = validateDebitCardMethod(at);
+            if (validDebitCard.getStatusCodeValue() != HttpStatus.OK.value()) {
+                return validDebitCard;
+            }
+
             Optional<AccountDTO> optAccount = accountService.findByNroAccount(at.getNroAccount());
             if (optAccount.isPresent()) {
                 AccountDTO account = optAccount.get();
@@ -118,8 +137,8 @@ public class AccountTransactionController {
                         }
 
                         account.setAmount(account.getAmount() - at.getTransactionAmount());
-                        ResponseEntity<?> resp = accountService.updateAccount(account);
 
+                        ResponseEntity<?> resp = accountService.updateAccount(account);
                         if (resp.getStatusCodeValue() == HttpStatus.OK.value()) {
                             at.setType(TypeAccountTransaction.RETIRO.toString());
                             at.setTransactionDate(new Date());
@@ -142,6 +161,17 @@ public class AccountTransactionController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
-    
 
+    private ResponseEntity<?> validateDebitCardMethod(AccountTransaction at) {
+        if (at.getMethod().equals(MethodTransaction.TARJETA.toString())) {
+            Optional<DebitCardDTO> optDebitCardDTO = debitCardService.findByNroCardAndNroAccount(at.getNroAccount(),
+                    at.getNroCard());
+            if (optDebitCardDTO.isPresent()) {
+                return ResponseEntity.ok().build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Ingrese una tarjeta de debito válida y vuelva a intentarlo.");
+        }
+        return ResponseEntity.ok().build();
+    }
 }

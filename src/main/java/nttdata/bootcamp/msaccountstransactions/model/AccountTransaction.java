@@ -22,6 +22,8 @@ public class AccountTransaction {
     private Double transactionAmount;
     private Date transactionDate;
     private Double comission;
+    private String method;
+    private String nroCard;
     private Double before;
     private Double transactionLater;
 }
